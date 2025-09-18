@@ -49,28 +49,31 @@ export default function Page() {
         load();
     }, [token]);
 
+    // Detecta se está em localhost ou em produção
+    const BASE_URL =
+        typeof window !== "undefined" && window.location.hostname === "localhost"
+            ? "http://localhost:3001"
+            : "https://linkrotatorserver.onrender.com";
+
     const handleCopy = async (id: string) => {
         try {
-            const url = `${
-                process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-            }/links/${id}/rotate`;
+            const url = `${BASE_URL}/links/${id}/rotate`;
             await navigator.clipboard.writeText(url);
             setCopiedId(id);
-            toast.success('Link copied to clipboard!');
+            toast.success("Link copied to clipboard!");
             setTimeout(() => setCopiedId(null), 2000);
         } catch (err) {
             console.error(err);
-            toast.error('Failed to copy link');
+            toast.error("Failed to copy link");
         }
     };
 
     const handleRotate = (id: string) => {
-        const url = `${
-            process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-        }/links/${id}/rotate`;
-        window.open(url, '_blank', 'noopener,noreferrer');
-        toast('Opening rotate...', { icon: '🔀' });
+        const url = `${BASE_URL}/links/${id}/rotate`;
+        window.open(url, "_blank", "noopener,noreferrer");
+        toast("Opening rotate...", { icon: "🔀" });
     };
+
 
     // Abre modal e busca métricas (GET /links/:id/metrics)
     const openMetrics = async (link: any) => {
