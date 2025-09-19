@@ -6,7 +6,7 @@ const BASE_URL =
         : 'https://linkrotatorserver.onrender.com';
 
 export async function register(username: string, password: string) {
-    const res = await fetch(`${BASE_URL}/auth/register`, {
+    const res = await fetch(`${BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -15,7 +15,7 @@ export async function register(username: string, password: string) {
 }
 
 export async function login(username: string, password: string) {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
+    const res = await fetch(`${BASE_URL}/auth/signin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
