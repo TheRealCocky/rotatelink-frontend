@@ -1,55 +1,70 @@
 'use client';
 import { useState } from 'react';
-import { login } from '@/server/api';
 import { useRouter } from 'next/navigation';
 
-export default function Page() {
+export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const router = useRouter();
 
     const handleLogin = async () => {
-        const res = await login(username, password);
-        if (res.access_token) {
-            localStorage.setItem('token', res.access_token);
-            router.push('/dashboard/index');
-        } else {
-            alert('Page failed: check username/password');
+        setLoading(true);
+        setError('');
+
+        try {
+            const res = await fetch('https://linkrotatorserver.onrender.com/auth/signin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            if (!res.ok) {
+                throw new Error('Login failed');
+            }
+
+            const data = await res.json();
+            localStorage.setItem('token', data.accessToken);
+            router.push('/dashboard');
+        } catch (err: any) {
+            setError(err.message || 'Something went wrong');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
-                <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
-                <div className="flex flex-col gap-4">
-                    <input
-                        className="border p-2 rounded"
-                        placeholder="Username"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                    />
-                    <input
-                        type="password"
-                        className="border p-2 rounded"
-                        placeholder="Password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                    />
-                    <button
-                        className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
-                        onClick={handleLogin}
-                    >
-                        Login
-                    </button>
-                    <p className="text-sm text-center mt-2">
-                        Don’t have an account?{' '}
-                        <a href="/auth/register" className="text-blue-600 hover:underline">
-                            Register
-                        </a>
-                    </p>
-                </div>
-            </div>
+        <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-xl shadow">
+            <h1 className="text-2xl font-bold mb-6">🔐 Login</h1>
+
+            <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="border p-2 rounded w-full mb-4"
+            />
+            <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="border p-2 rounded w-full mb-4"
+            />
+
+            <button
+                onClick={handleLogin}
+                disabled={loading}
+                className="bg-blue-600 text-white w-full p-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
+            >
+                {loading ? 'Carregando...' : 'Entrar'}
+            </button>
+
+            {error && <p className="text-red-500 text-sm mt-3">{error}</p>}
         </div>
     );
 }
+
