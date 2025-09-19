@@ -28,7 +28,7 @@ export default function LoginPage() {
 
             const data = await res.json();
             localStorage.setItem('token', data.accessToken);
-            router.push('/dashboard');
+            router.push('/dashboard/index');
         } catch (err: any) {
             setError(err.message || 'Something went wrong');
         } finally {
