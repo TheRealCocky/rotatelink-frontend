@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, Suspense } from 'react';
 import { getMetrics } from '@/server/api';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -12,7 +13,8 @@ import {
     CartesianGrid,
 } from 'recharts';
 
-export default function Page() {
+// Componente que realmente usa useSearchParams
+function MetricsContent() {
     const [metrics, setMetrics] = useState<any>(null);
     const searchParams = useSearchParams();
     const linkId = searchParams.get('id');
@@ -25,7 +27,8 @@ export default function Page() {
         }
     }, [linkId, token]);
 
-    if (!metrics) return <div className="text-center mt-10">Loading...</div>;
+    if (!metrics)
+        return <div className="text-center mt-10">Loading metrics...</div>;
 
     // preparar dados para o gráfico
     const chartData = metrics.clicksPerUrl.map((c: number, i: number) => ({
@@ -61,18 +64,34 @@ export default function Page() {
 
             {/* Gráfico */}
             <div className="bg-white p-6 rounded-xl shadow">
-                <h2 className="text-xl font-semibold mb-4">Clicks per Alternative</h2>
+                <h2 className="text-xl font-semibold mb-4">
+                    Clicks per Alternative
+                </h2>
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis allowDecimals={false} />
                         <Tooltip />
-                        <Bar dataKey="clicks" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                        <Bar
+                            dataKey="clicks"
+                            fill="#3b82f6"
+                            radius={[8, 8, 0, 0]}
+                        />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
         </div>
     );
 }
+
+// Página principal com Suspense
+export default function Page() {
+    return (
+        <Suspense fallback={<div className="text-center mt-10">Loading...</div>}>
+            <MetricsContent />
+        </Suspense>
+    );
+}
+
 
