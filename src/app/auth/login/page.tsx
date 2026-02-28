@@ -14,7 +14,7 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const res = await fetch('https://linkrotatorserver.onrender.com/auth/signin', {
+            const res = await fetch('https://linkmetrics-backend-9p95.onrender.com/auth/signin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
