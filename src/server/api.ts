@@ -20,8 +20,17 @@ export async function login(username: string, password: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
     });
-    return res.json(); // { access_token: '...' }
+    const data = await res.json();
+
+    if (data.accessToken) {
+        localStorage.setItem("token", data.accessToken);
+        localStorage.setItem("username", data.username);
+    }
+
+    return data;
 }
+
+
 
 export async function createLink(
     token: string,
@@ -40,12 +49,29 @@ export async function createLink(
     return res.json();
 }
 
-export async function getLinks(token: string) {
+export async function getLinks() {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Usuário não autenticado");
+
     const res = await fetch(`${BASE_URL}/links`, {
         headers: { Authorization: `Bearer ${token}` },
     });
-    return res.json();
+
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Erro ao buscar links");
+    }
+
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+        throw new Error("Resposta inesperada da API de links");
+    }
+
+    return data;
 }
+
+
 
 export async function getMetrics(token: string, linkId: string) {
     const res = await fetch(`${BASE_URL}/links/${linkId}/metrics`, {

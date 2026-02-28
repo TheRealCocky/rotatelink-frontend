@@ -32,7 +32,7 @@ export default function DashboardPage() {
         <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold">📊 Dashboard Overview</h1>
+                <h1 className="text-3xl font-bold dark:text-black">📊 Dashboard Overview</h1>
                 <p className="text-gray-600 mt-2">
                     Gain insights into your links: monitor total clicks, identify your top
                     performers, and track engagement trends over time.

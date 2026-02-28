@@ -13,13 +13,32 @@ import {
     CartesianGrid,
 } from 'recharts';
 
+// ✅ Tipos para evitar "any"
+interface Link {
+    id: string;
+    originalUrl: string;
+    alternativeUrls: string[];
+    accessCount: number;
+    createdAt: string;
+}
+
+interface Metrics {
+    id: string;
+    originalUrl: string;
+    alternativeUrls: string[];
+    accessCount: number;
+    createdAt: string;
+    updatedAt: string;
+    clicksPerUrl: number[];
+}
+
 export default function Page() {
-    const [links, setLinks] = useState<any[]>([]);
+    const [links, setLinks] = useState<Link[]>([]);
     const [loadingLinks, setLoadingLinks] = useState(true);
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [selectedLink, setSelectedLink] = useState<any | null>(null);
-    const [metrics, setMetrics] = useState<any | null>(null);
+    const [selectedLink, setSelectedLink] = useState<Link | null>(null);
+    const [metrics, setMetrics] = useState<Metrics | null>(null);
     const [loadingMetrics, setLoadingMetrics] = useState(false);
 
     const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -36,47 +55,47 @@ export default function Page() {
             }
             try {
                 setLoadingLinks(true);
-                const data = await getLinks(token);
-                setLinks(Array.isArray(data) ? data : []);
+                const data = await getLinks();
+                setLinks(data); // aqui já é array garantido
             } catch (err) {
                 console.error(err);
-                toast.error('Failed to load links.');
+                toast.error((err as Error).message || 'Failed to load links.');
                 setLinks([]);
             } finally {
                 setLoadingLinks(false);
             }
+
         };
         load();
     }, [token]);
 
-    // Detecta se está em localhost ou em produção
+    // Detecta se está em localhost ou produção
     const BASE_URL =
-        typeof window !== "undefined" && window.location.hostname === "localhost"
-            ? "http://localhost:3001"
-            : "https://linkrotatorserver.onrender.com";
+        typeof window !== 'undefined' && window.location.hostname === 'localhost'
+            ? 'http://localhost:3001'
+            : 'https://linkmetrics-backend-9p95.onrender.com';
 
     const handleCopy = async (id: string) => {
         try {
             const url = `${BASE_URL}/links/${id}/rotate`;
             await navigator.clipboard.writeText(url);
             setCopiedId(id);
-            toast.success("Link copied to clipboard!");
+            toast.success('Link copied to clipboard!');
             setTimeout(() => setCopiedId(null), 2000);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to copy link");
+            toast.error('Failed to copy link');
         }
     };
 
     const handleRotate = (id: string) => {
         const url = `${BASE_URL}/links/${id}/rotate`;
-        window.open(url, "_blank", "noopener,noreferrer");
-        toast("Opening rotate...", { icon: "🔀" });
+        window.open(url, '_blank', 'noopener,noreferrer');
+        toast('Opening rotate...', { icon: '🔀' });
     };
 
-
     // Abre modal e busca métricas (GET /links/:id/metrics)
-    const openMetrics = async (link: any) => {
+    const openMetrics = async (link: Link) => {
         setSelectedLink(link);
         setModalOpen(true);
         setLoadingMetrics(true);
@@ -144,27 +163,23 @@ export default function Page() {
 
                                 <td className="px-4 py-3">
                                     <ul className="list-disc list-inside text-sm text-gray-600">
-                                        {Array.isArray(link.alternativeUrls) &&
-                                            link.alternativeUrls
-                                                .slice(0, 3)
-                                                .map((alt: string, i: number) => (
-                                                    <li key={i} className="truncate max-w-xs">
-                                                        <a
-                                                            href={alt}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="hover:underline"
-                                                        >
-                                                            {alt}
-                                                        </a>
-                                                    </li>
-                                                ))}
-                                        {Array.isArray(link.alternativeUrls) &&
-                                            link.alternativeUrls.length > 3 && (
-                                                <li className="text-gray-400">
-                                                    +{link.alternativeUrls.length - 3} more
-                                                </li>
-                                            )}
+                                        {link.alternativeUrls.slice(0, 3).map((alt, i) => (
+                                            <li key={i} className="truncate max-w-xs">
+                                                <a
+                                                    href={alt}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="hover:underline"
+                                                >
+                                                    {alt}
+                                                </a>
+                                            </li>
+                                        ))}
+                                        {link.alternativeUrls.length > 3 && (
+                                            <li className="text-gray-400">
+                                                +{link.alternativeUrls.length - 3} more
+                                            </li>
+                                        )}
                                     </ul>
                                 </td>
 
@@ -296,21 +311,13 @@ export default function Page() {
 
                                     {/* Chart */}
                                     <div className="bg-white p-4 rounded shadow">
-                                        <h3 className="font-semibold mb-3">
-                                            Clicks by alternative
-                                        </h3>
+                                        <h3 className="font-semibold mb-3">Clicks by alternative</h3>
                                         <ResponsiveContainer width="100%" height={260}>
                                             <BarChart
-                                                data={
-                                                    Array.isArray(metrics.alternativeUrls)
-                                                        ? metrics.alternativeUrls.map(
-                                                            (url: string, i: number) => ({
-                                                                name: url,
-                                                                clicks: metrics.clicksPerUrl?.[i] ?? 0,
-                                                            })
-                                                        )
-                                                        : []
-                                                }
+                                                data={metrics.alternativeUrls.map((url, i) => ({
+                                                    name: url,
+                                                    clicks: metrics.clicksPerUrl?.[i] ?? 0,
+                                                }))}
                                             >
                                                 <CartesianGrid strokeDasharray="3 3" />
                                                 <XAxis
@@ -344,52 +351,50 @@ export default function Page() {
                                             </tr>
                                             </thead>
                                             <tbody>
-                                            {metrics.alternativeUrls.map(
-                                                (url: string, i: number) => (
-                                                    <tr key={i} className="border-b hover:bg-gray-50">
-                                                        <td className="py-2 px-3">
-                                                            <a
-                                                                href={url}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="text-blue-600 hover:underline"
+                                            {metrics.alternativeUrls.map((url, i) => (
+                                                <tr key={i} className="border-b hover:bg-gray-50">
+                                                    <td className="py-2 px-3">
+                                                        <a
+                                                            href={url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="text-blue-600 hover:underline"
+                                                        >
+                                                            {url}
+                                                        </a>
+                                                    </td>
+                                                    <td className="py-2 px-3 text-center font-semibold">
+                                                        {metrics.clicksPerUrl?.[i] ?? 0}
+                                                    </td>
+                                                    <td className="py-2 px-3 text-right">
+                                                        <div className="inline-flex gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(url);
+                                                                    toast.success('Alternative copied!');
+                                                                }}
+                                                                className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-sm"
                                                             >
-                                                                {url}
-                                                            </a>
-                                                        </td>
-                                                        <td className="py-2 px-3 text-center font-semibold">
-                                                            {metrics.clicksPerUrl?.[i] ?? 0}
-                                                        </td>
-                                                        <td className="py-2 px-3 text-right">
-                                                            <div className="inline-flex gap-2">
-                                                                <button
-                                                                    onClick={() => {
-                                                                        navigator.clipboard.writeText(url);
-                                                                        toast.success('Alternative copied!');
-                                                                    }}
-                                                                    className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-sm"
-                                                                >
-                                                                    <Copy className="w-4 h-4 inline-block mr-1" />{' '}
-                                                                    Copy
-                                                                </button>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        window.open(
-                                                                            url,
-                                                                            '_blank',
-                                                                            'noopener,noreferrer'
-                                                                        )
-                                                                    }
-                                                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                                                                >
-                                                                    <RefreshCcw className="w-4 h-4 inline-block mr-1" />{' '}
-                                                                    Open
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            )}
+                                                                <Copy className="w-4 h-4 inline-block mr-1" />{' '}
+                                                                Copy
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    window.open(
+                                                                        url,
+                                                                        '_blank',
+                                                                        'noopener,noreferrer'
+                                                                    )
+                                                                }
+                                                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                                                            >
+                                                                <RefreshCcw className="w-4 h-4 inline-block mr-1" />{' '}
+                                                                Open
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                             </tbody>
                                         </table>
                                     </div>
@@ -406,6 +411,8 @@ export default function Page() {
         </div>
     );
 }
+
+
 
 
 
